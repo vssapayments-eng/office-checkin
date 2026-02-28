@@ -1,0 +1,13 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<body style="text-align:center; padding-top:50px;">
+    <h2>SCAN TO CLOCK IN</h2>
+    <div id="qrcode" style="display:inline-block;"></div>
+    <script>
+        const attendanceUrl = "https://yourname.github.io/repo/index.html"; 
+        const qrcode = new QRCode(document.getElementById("qrcode"), { width: 300, height: 300 });
+        setInterval(() => {
+            const token = btoa(Math.floor(Date.now() / 30000)).substring(0,8);
+            qrcode.makeCode(attendanceUrl + "?auth=" + token);
+        }, 1000);
+    </script>
+</body>
