@@ -24,47 +24,58 @@
     <script>
         const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbw0PoojpiDYnSiW5kZCjV6xXtPHAshLaj02JywypWvZSXX2uYxEryfilZjk3MyJw_vT5Q/exec"; // Ensure this is your latest /exec URL
 
-        window.onload = () => {
-            const params = new URLSearchParams(window.location.search);
-            const received = params.get('auth');
-            const token = btoa(Math.floor(Date.now() / 30000)).substring(0,8);
+    // 2. Paste the window.onload fix here
+    window.onload = () => {
+        const params = new URLSearchParams(window.location.search);
+        const received = params.get('auth');
+        
+        // This is the 30-second security math
+        const now = Math.floor(Date.now() / 30000);
+        const token1 = btoa(now).substring(0,8);
+        const token2 = btoa(now - 1).substring(0,8);
 
-            if (received === token) {
-                document.getElementById('app').style.display = 'block';
-                checkTime();
-            } else {
-                document.body.innerHTML = "<h2 style='color:red;'>❌ Expired Session.<br>Please scan the live QR on the Boss's phone again.</h2>";
-            }
-        };
-
-        function checkTime() {
-            const now = new Date();
-            const mins = now.getHours() * 60 + now.getMinutes();
-            if (mins > 615 && mins < 780) { // 10:15 AM to 1:00 PM
-                document.getElementById('loginBtn').style.display = 'none';
-                document.getElementById('msg').innerText = "Login is currently closed.";
-            }
+        if (received === token1 || received === token2) {
+            document.getElementById('app').style.display = 'block';
+            
+            // Fill in the name if they used it before
+            document.getElementById('name').value = localStorage.getItem('staffName') || '';
+            
+            checkTime();
+        } else {
+            document.body.innerHTML = "<h2 style='color:red; text-align:center; margin-top:50px;'>❌ Link Expired.<br>Please scan the fresh QR code on the Boss's phone.</h2>";
         }
+    };
 
-        async function send(type) {
-            const name = document.getElementById('name').value;
-            if(!name) return alert("Please enter your name");
-
-            // Simplified data: No photo
-            const payload = { name: name, type: type };
-
-            try {
-                await fetch(GOOGLE_URL, { 
-                    method: 'POST', 
-                    mode: 'no-cors', 
-                    body: JSON.stringify(payload) 
-                });
-                alert(type + " Successful for " + name);
-                window.location.href = "about:blank"; // Close/Clear page
-            } catch (e) {
-                alert("Error: " + e);
-            }
+    // 3. Keep your checkTime function
+    function checkTime() {
+        const now = new Date();
+        const mins = now.getHours() * 60 + now.getMinutes();
+        if (mins > 615 && mins < 780) { 
+            document.getElementById('loginBtn').style.display = 'none';
+            document.getElementById('msg').innerText = "Login is currently closed.";
         }
-    </script>
+    }
+
+    // 4. Paste the updated send function here
+    async function send(type) {
+        const name = document.getElementById('name').value;
+        if(!name) return alert("Please enter your name");
+
+        // Save name for next time
+        localStorage.setItem('staffName', name);
+
+        const payload = { name: name, type: type };
+
+        try {
+            document.getElementById('app').innerHTML = "<h2>Recording... Please wait.</h2>";
+            await fetch(GOOGLE_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+            
+            document.body.innerHTML = `<h2 style='color:green; text-align:center; margin-top:50px;'>✅ ${type} Successful!<br>Have a great day, ${name}.</h2>`;
+        } catch (e) {
+            alert("Error: " + e);
+        }
+    }
+</script>
 </body>
 </html>
+     
