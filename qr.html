@@ -4,29 +4,31 @@
     <title>Office QR Beacon</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        body { text-align: center; font-family: sans-serif; padding-top: 50px; background: white; }
-        #qrcode { display: inline-block; padding: 15px; border: 5px solid #333; border-radius: 10px; }
+        body { text-align: center; font-family: sans-serif; padding-top: 50px; }
+        #qrcode { display: inline-block; padding: 20px; border: 5px solid #333; border-radius: 10px; min-height: 300px; min-width: 300px; background: #f9f9f9; }
     </style>
 </head>
 <body>
     <h2>SCAN TO CLOCK IN</h2>
     <div id="qrcode"></div>
-    <p>Code updates every 30 seconds</p>
+    <p id="stat">Generating code...</p>
 
     <script>
-        // Update this to your ACTUAL GitHub index.html link
+        // Use your live GitHub Pages link here
         const attendanceUrl = "https://vssapayments-eng.github.io/office-checkin/index.html"; 
-        const qrContainer = document.getElementById("qrcode");
-        const qrcode = new QRCode(qrContainer, { width: 280, height: 280 });
+        const qrDiv = document.getElementById("qrcode");
+        const qrcode = new QRCode(qrDiv, { width: 300, height: 300 });
 
-        function updateQR() {
-            const timeBlock = Math.floor(Date.now() / 30000);
-            const token = btoa(timeBlock).substring(0,8);
+        function update() {
+            // Generate token based on 30-second window
+            const token = btoa(Math.floor(Date.now() / 30000)).substring(0,8);
             qrcode.makeCode(attendanceUrl + "?auth=" + token);
+            document.getElementById("stat").innerText = "Code updated at: " + new Date().toLocaleTimeString();
         }
 
-        setInterval(updateQR, 1000); 
-        updateQR();
+        // Update every second to ensure it's always fresh
+        setInterval(update, 1000);
+        update();
     </script>
 </body>
 </html>
