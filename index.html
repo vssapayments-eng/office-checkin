@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Office Attendance</title>
+    <title>Staff Attendance</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f4f9; }
-        video { width: 100%; max-width: 400px; border-radius: 10px; border: 3px solid #333; }
-        .btn { padding: 20px; color: white; border: none; border-radius: 10px; font-size: 18px; margin: 10px; cursor: pointer; width: 80%; }
-        .login { background: #27ae60; } .logout { background: #c0392b; }
-        #app { display: none; }
+        body { font-family: sans-serif; text-align: center; padding: 20px; }
+        #app { display: none; } /* Hidden by default for security */
+        video { width: 100%; max-width: 400px; border-radius: 10px; border: 2px solid #000; }
+        .btn { padding: 15px; margin: 10px; width: 80%; color: white; border: none; border-radius: 5px; font-size: 18px; }
+        .login { background: green; } .logout { background: red; }
     </style>
 </head>
 <body>
@@ -16,65 +16,54 @@
         <h2>Office Check-In</h2>
         <video id="video" autoplay playsinline></video>
         <canvas id="canvas" width="400" height="300" style="display:none;"></canvas>
-        <br>
-        <input type="text" id="empName" placeholder="Enter Your Name" style="padding:15px; width:75%; margin:10px; border-radius:5px; border:1px solid #ccc;">
-        <div id="controls">
-            <button id="loginBtn" class="btn login" onclick="sendData('LOGIN')">LOGIN</button>
-            <button id="logoutBtn" class="btn logout" onclick="sendData('LOGOUT')">LOGOUT</button>
-        </div>
-        <p id="msg" style="font-weight:bold; color:red;"></p>
+        <input type="text" id="name" placeholder="Enter Full Name" style="padding:10px; width:75%; margin:10px;">
+        <button id="loginBtn" class="btn login" onclick="send('LOGIN')">LOGIN</button>
+        <button id="logoutBtn" class="btn logout" onclick="send('LOGOUT')">LOGOUT</button>
     </div>
 
     <script>
-        // PASTE YOUR GOOGLE EXEC URL HERE
-        const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbyR6m.../exec"; 
+        // PASTE YOUR GOOGLE SCRIPT URL HERE
+        const GOOGLE_URL = "https://script.google.com/macros/s/AKfycb.../exec"; 
 
         window.onload = () => {
             const params = new URLSearchParams(window.location.search);
             const received = params.get('auth');
-            
-            // Security: Verify 30-second rotating token
-            const timeBlock = Math.floor(Date.now() / 30000);
-            const token = btoa(timeBlock).substring(0,8);
+            const now = Math.floor(Date.now() / 30000);
+            const token = btoa(now).substring(0,8);
+            const prevToken = btoa(now - 1).substring(0,8); // 30s grace period
 
-            if (received === token) {
+            if (received === token || received === prevToken) {
                 document.getElementById('app').style.display = 'block';
                 startCamera();
-                checkTimeRules();
+                checkTime();
             } else {
-                document.body.innerHTML = "<h2 style='margin-top:50px; color:red;'>❌ Invalid or Expired QR.<br>Please scan the live code on the Boss's phone.</h2>";
+                document.body.innerHTML = "<h2 style='color:red; margin-top:50px;'>❌ Invalid or Expired QR.<br>Please scan the live code on the Boss's phone.</h2>";
             }
         };
 
-        function checkTimeRules() {
-            const now = new Date();
-            const mins = now.getHours() * 60 + now.getMinutes();
-            const tenFifteen = 10 * 60 + 15; // 10:15 AM
-            const onePM = 13 * 60;          // 1:00 PM
-
-            // Rule: LOGIN is hidden only between 10:16 AM and 12:59 PM
-            if (mins > tenFifteen && mins < onePM) {
-                document.getElementById('loginBtn').style.display = "none";
-                document.getElementById('msg').innerText = "Morning Login Closed. Re-opens at 1:00 PM.";
+        function checkTime() {
+            const h = new Date().getHours();
+            const m = new Date().getMinutes();
+            const time = h * 60 + m;
+            // Hide Login between 10:15 AM (615 mins) and 1:00 PM (780 mins)
+            if (time > 615 && time < 780) {
+                document.getElementById('loginBtn').style.display = 'none';
             }
         }
 
         async function startCamera() {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-            document.getElementById('video').srcObject = stream;
+            const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+            document.getElementById('video').srcObject = s;
         }
 
-        async function sendData(type) {
-            const name = document.getElementById('empName').value;
-            if(!name) return alert("Please enter your name");
-            
-            const canvas = document.getElementById('canvas');
-            canvas.getContext('2d').drawImage(document.getElementById('video'), 0, 0, 400, 300);
-            const photo = canvas.toDataURL('image/jpeg', 0.5);
-
-            await fetch(GOOGLE_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({name, type, photo}) });
-            alert(type + " Successful!");
-            location.reload(); 
+        async function send(type) {
+            const n = document.getElementById('name').value;
+            if(!n) return alert("Type Name");
+            const c = document.getElementById('canvas');
+            c.getContext('2d').drawImage(document.getElementById('video'), 0, 0, 400, 300);
+            const p = c.toDataURL('image/jpeg', 0.5);
+            await fetch(GOOGLE_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({name:n, type:type, photo:p}) });
+            alert(type + " Sent!");
         }
     </script>
 </body>
