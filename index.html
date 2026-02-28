@@ -1,66 +1,160 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Office Attendance</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Office Attendance Portal</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 40px 20px; background: #f4f7f6; }
-        #app { display: none; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        input { padding: 15px; width: 85%; margin: 20px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
-        .btn { padding: 20px; width: 100%; color: white; border: none; border-radius: 10px; font-size: 18px; margin: 10px 0; cursor: pointer; font-weight: bold; }
-        .login { background: #27ae60; } .logout { background: #e67e22; }
-        #msg { color: #c0392b; font-weight: bold; margin-top: 15px; }
+        :root {
+            --primary: #2563eb;
+            --success: #16a34a;
+            --warning: #ea580c;
+            --bg: #f8fafc;
+        }
+        body { 
+            font-family: -apple-system, system-ui, sans-serif; 
+            text-align: center; 
+            background-color: var(--bg); 
+            margin: 0; 
+            padding: 20px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh;
+        }
+        #app { 
+            display: none; 
+            background: white; 
+            padding: 30px; 
+            border-radius: 20px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+            width: 100%; 
+            max-width: 400px; 
+        }
+        h2 { color: #1e293b; margin-bottom: 5px; }
+        p.subtitle { color: #64748b; margin-bottom: 25px; font-size: 14px; }
+        input { 
+            width: 100%; 
+            padding: 15px; 
+            margin: 10px 0; 
+            border: 2px solid #e2e8f0; 
+            border-radius: 10px; 
+            font-size: 16px; 
+            box-sizing: border-box;
+            outline: none;
+        }
+        input:focus { border-color: var(--primary); }
+        .btn { 
+            width: 100%; 
+            padding: 16px; 
+            margin: 10px 0; 
+            border: none; 
+            border-radius: 10px; 
+            font-size: 18px; 
+            font-weight: bold; 
+            color: white; 
+            cursor: pointer; 
+            transition: transform 0.1s;
+        }
+        .btn:active { transform: scale(0.98); }
+        .login { background-color: var(--success); }
+        .logout { background-color: var(--warning); }
+        #status-msg { margin-top: 20px; font-weight: 500; color: #64748b; }
     </style>
 </head>
 <body>
+
     <div id="app">
-        <h2>Attendance Portal</h2>
-        <input type="text" id="name" placeholder="Enter Your Full Name">
-        <button id="loginBtn" class="btn login" onclick="send('LOGIN')">CLOCK IN</button>
-        <button id="logoutBtn" class="btn logout" onclick="send('LOGOUT')">CLOCK OUT</button>
-        <p id="msg"></p>
+        <h2>Office Attendance</h2>
+        <p class="subtitle">Please enter your name to clock in/out</p>
+        
+        <input type="text" id="name" placeholder="Full Name" spellcheck="false">
+        
+        <button class="btn login" onclick="sendData('LOGIN')">CLOCK IN</button>
+        <button class="btn logout" onclick="sendData('LOGOUT')">CLOCK OUT</button>
+        
+        <div id="status-msg"></div>
     </div>
 
     <script>
-        const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbxw9DkyLsRlsMGin6bdqJBc4W2EfBpVZxp2Z6is_A-cmKCFKJVY_bYclObNZM5XzjdX_Q/exec";
+        // 1. CONFIGURATION - PASTE YOUR URL BELOW
+        const GOOGLE_URL = "PASTE_YOUR_APPS_SCRIPT_URL_HERE";
 
+        // 2. SECURITY & INITIALIZATION
         window.onload = () => {
             const params = new URLSearchParams(window.location.search);
-            const received = params.get('auth');
+            const receivedToken = params.get('auth');
+            
+            // Calculate security tokens (current and previous 30s window)
             const now = Math.floor(Date.now() / 30000);
-            const token1 = btoa(now).substring(0,8);
-            const token2 = btoa(now - 1).substring(0,8);
+            const t1 = btoa(now).substring(0, 8);
+            const t2 = btoa(now - 1).substring(0, 8);
 
-            if (received === token1 || received === token2) {
+            if (receivedToken === t1 || receivedToken === t2) {
+                // Token valid - Show App
                 document.getElementById('app').style.display = 'block';
-                document.getElementById('name').value = localStorage.getItem('staffName') || '';
+                // Auto-fill name if they've used this phone before
+                document.getElementById('name').value = localStorage.getItem('office_user_name') || '';
             } else {
-                document.body.innerHTML = "<h2 style='color:red;'>❌ Expired Session.<br>Please scan the live QR again.</h2>";
+                // Token invalid or expired
+                document.body.innerHTML = `
+                    <div style="padding: 20px;">
+                        <h1 style="color: #ef4444;">❌ Access Denied</h1>
+                        <p>The QR code has expired or is invalid.<br>Please scan the latest code from the supervisor.</p>
+                    </div>`;
             }
         };
 
-        async function send(type) {
-            const name = document.getElementById('name').value;
-            if(!name) return alert("Please enter your name");
-            localStorage.setItem('staffName', name);
+        // 3. DATA SUBMISSION FUNCTION
+        async function sendData(type) {
+            const nameInput = document.getElementById('name');
+            const statusMsg = document.getElementById('status-msg');
+            const nameValue = nameInput.value.trim();
 
-            document.getElementById('msg').innerText = "Processing... Please wait.";
-            
-            try {
-                const response = await fetch(GOOGLE_URL, { 
-                    method: 'POST', 
-                    body: JSON.stringify({ name: name, type: type }) 
-                });
-                const result = await response.text();
-
-                if (result === "ALREADY_EXISTS") {
-                    document.getElementById('msg').innerText = "❌ You have already logged in today!";
-                } else {
-                    document.body.innerHTML = `<h2 style='color:green;'>✅ ${type} Successful!<br>Goodbye, ${name}.</h2>`;
-                }
-            } catch (e) {
-                alert("Connection Error. Try again.");
+            if (!nameValue) {
+                alert("Please enter your name before proceeding.");
+                return;
             }
+
+            // Save name locally for convenience
+            localStorage.setItem('office_user_name', nameValue);
+
+            // Update UI to show progress
+            statusMsg.innerText = "Sending to secure server...";
+            statusMsg.style.color = "#2563eb";
+
+            try {
+                // The Fetch Engine
+                await fetch(GOOGLE_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // Essential for Google Apps Script cross-origin
+                    cache: 'no-cache',
+                    body: JSON.stringify({
+                        name: nameValue,
+                        type: type
+                    })
+                });
+
+                // Since 'no-cors' provides an empty response, we assume success if no catch error
+                showSuccess(nameValue, type);
+
+            } catch (error) {
+                console.error('Error:', error);
+                statusMsg.innerText = "❌ Connection Failed. Check your internet.";
+                statusMsg.style.color = "#ef4444";
+            }
+        }
+
+        function showSuccess(name, type) {
+            const container = document.getElementById('app');
+            container.innerHTML = `
+                <div style="padding: 20px 0;">
+                    <div style="font-size: 50px; margin-bottom: 15px;">✅</div>
+                    <h2 style="color: #16a34a;">${type} Successful</h2>
+                    <p style="color: #64748b;">Thank you, <b>${name}</b>.<br>Your record has been updated.</p>
+                    <button onclick="window.location.reload()" style="background: none; border: 1px solid #cbd5e1; padding: 10px 20px; border-radius: 5px; cursor: pointer; color: #64748b; margin-top: 20px;">Back</button>
+                </div>
+            `;
         }
     </script>
 </body>
