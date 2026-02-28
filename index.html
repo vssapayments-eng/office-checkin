@@ -1,30 +1,81 @@
-window.onload = () => {
-    const params = new URLSearchParams(window.location.search);
-    const received = params.get('auth');
-    const now = new Date();
-    const mins = now.getHours() * 60 + now.getMinutes();
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Office Attendance</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f4f9; }
+        video { width: 100%; max-width: 400px; border-radius: 10px; border: 3px solid #333; }
+        .btn { padding: 20px; color: white; border: none; border-radius: 10px; font-size: 18px; margin: 10px; cursor: pointer; width: 80%; }
+        .login { background: #27ae60; } .logout { background: #c0392b; }
+        #app { display: none; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h2>Office Check-In</h2>
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas" width="400" height="300" style="display:none;"></canvas>
+        <br>
+        <input type="text" id="empName" placeholder="Enter Your Name" style="padding:15px; width:75%; margin:10px; border-radius:5px; border:1px solid #ccc;">
+        <div id="controls">
+            <button id="loginBtn" class="btn login" onclick="sendData('LOGIN')">LOGIN</button>
+            <button id="logoutBtn" class="btn logout" onclick="sendData('LOGOUT')">LOGOUT</button>
+        </div>
+        <p id="msg" style="font-weight:bold; color:red;"></p>
+    </div>
 
-    // Verify QR Code Security (30-second token)
-    const timeBlock = Math.floor(Date.now() / 30000);
-    const token = btoa(timeBlock).substring(0,8);
+    <script>
+        // PASTE YOUR GOOGLE EXEC URL HERE
+        const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbyR6m.../exec"; 
 
-    if (received === token) {
-        document.getElementById('app').style.display = 'block';
-        
-        // --- YOUR TIME RULES ---
-        const tenFifteen = 10 * 60 + 15; // 10:15 AM
-        const onePM = 13 * 60;          // 1:00 PM
-        
-        const loginBtn = document.getElementById('loginBtn');
-        
-        // Allow LOGIN: Before 10:15 AM OR After 1:00 PM
-        if (mins <= tenFifteen || mins >= onePM) {
-            loginBtn.style.display = "block";
-        } else {
-            loginBtn.style.display = "none";
-            document.getElementById('msg').innerText = "Login Closed (10:15 AM - 1:00 PM)";
+        window.onload = () => {
+            const params = new URLSearchParams(window.location.search);
+            const received = params.get('auth');
+            
+            // Security: Verify 30-second rotating token
+            const timeBlock = Math.floor(Date.now() / 30000);
+            const token = btoa(timeBlock).substring(0,8);
+
+            if (received === token) {
+                document.getElementById('app').style.display = 'block';
+                startCamera();
+                checkTimeRules();
+            } else {
+                document.body.innerHTML = "<h2 style='margin-top:50px; color:red;'>❌ Invalid or Expired QR.<br>Please scan the live code on the Boss's phone.</h2>";
+            }
+        };
+
+        function checkTimeRules() {
+            const now = new Date();
+            const mins = now.getHours() * 60 + now.getMinutes();
+            const tenFifteen = 10 * 60 + 15; // 10:15 AM
+            const onePM = 13 * 60;          // 1:00 PM
+
+            // Rule: LOGIN is hidden only between 10:16 AM and 12:59 PM
+            if (mins > tenFifteen && mins < onePM) {
+                document.getElementById('loginBtn').style.display = "none";
+                document.getElementById('msg').innerText = "Morning Login Closed. Re-opens at 1:00 PM.";
+            }
         }
-    } else {
-        document.body.innerHTML = "<h2>Invalid QR. Scan again on Boss's phone.</h2>";
-    }
-};
+
+        async function startCamera() {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+            document.getElementById('video').srcObject = stream;
+        }
+
+        async function sendData(type) {
+            const name = document.getElementById('empName').value;
+            if(!name) return alert("Please enter your name");
+            
+            const canvas = document.getElementById('canvas');
+            canvas.getContext('2d').drawImage(document.getElementById('video'), 0, 0, 400, 300);
+            const photo = canvas.toDataURL('image/jpeg', 0.5);
+
+            await fetch(GOOGLE_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({name, type, photo}) });
+            alert(type + " Successful!");
+            location.reload(); 
+        }
+    </script>
+</body>
+</html>
