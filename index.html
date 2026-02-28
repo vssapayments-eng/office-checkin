@@ -5,32 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body { font-family: sans-serif; text-align: center; padding: 20px; }
-        #app { display: none; } /* Hidden by default for security */
-        video { width: 100%; max-width: 400px; border-radius: 10px; border: 2px solid #000; }
+        #app { display: none; } /* Hidden until QR is verified */
+        video { width: 100%; max-width: 400px; border-radius: 10px; border: 2px solid #333; }
         .btn { padding: 15px; margin: 10px; width: 80%; color: white; border: none; border-radius: 5px; font-size: 18px; }
-        .login { background: green; } .logout { background: red; }
+        .login { background: #27ae60; } .logout { background: #c0392b; }
     </style>
 </head>
 <body>
     <div id="app">
-        <h2>Office Check-In</h2>
+        <h2>Office Attendance</h2>
         <video id="video" autoplay playsinline></video>
         <canvas id="canvas" width="400" height="300" style="display:none;"></canvas>
-        <input type="text" id="name" placeholder="Enter Full Name" style="padding:10px; width:75%; margin:10px;">
+        <br>
+        <input type="text" id="empName" placeholder="Enter Full Name" style="padding:15px; width:75%; margin:10px;">
         <button id="loginBtn" class="btn login" onclick="send('LOGIN')">LOGIN</button>
         <button id="logoutBtn" class="btn logout" onclick="send('LOGOUT')">LOGOUT</button>
+        <p id="msg" style="color:red; font-weight:bold;"></p>
     </div>
 
     <script>
-        // PASTE YOUR GOOGLE SCRIPT URL HERE
-        const GOOGLE_URL = "https://script.google.com/macros/s/AKfycb.../exec"; 
+        const GOOGLE_URL = "PASTE_YOUR_APPS_SCRIPT_URL_HERE"; 
 
         window.onload = () => {
             const params = new URLSearchParams(window.location.search);
             const received = params.get('auth');
+            
+            // Security verification
             const now = Math.floor(Date.now() / 30000);
             const token = btoa(now).substring(0,8);
-            const prevToken = btoa(now - 1).substring(0,8); // 30s grace period
+            const prevToken = btoa(now - 1).substring(0,8); // Allow 30s grace period
 
             if (received === token || received === prevToken) {
                 document.getElementById('app').style.display = 'block';
@@ -42,12 +45,12 @@
         };
 
         function checkTime() {
-            const h = new Date().getHours();
-            const m = new Date().getMinutes();
-            const time = h * 60 + m;
-            // Hide Login between 10:15 AM (615 mins) and 1:00 PM (780 mins)
-            if (time > 615 && time < 780) {
+            const now = new Date();
+            const mins = now.getHours() * 60 + now.getMinutes();
+            // Hide Login between 10:15 AM and 1:00 PM
+            if (mins > 615 && mins < 780) {
                 document.getElementById('loginBtn').style.display = 'none';
+                document.getElementById('msg').innerText = "Login Closed (Re-opens at 1:00 PM)";
             }
         }
 
@@ -57,13 +60,15 @@
         }
 
         async function send(type) {
-            const n = document.getElementById('name').value;
-            if(!n) return alert("Type Name");
+            const n = document.getElementById('empName').value;
+            if(!n) return alert("Please enter your name");
             const c = document.getElementById('canvas');
             c.getContext('2d').drawImage(document.getElementById('video'), 0, 0, 400, 300);
             const p = c.toDataURL('image/jpeg', 0.5);
+            
             await fetch(GOOGLE_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({name:n, type:type, photo:p}) });
-            alert(type + " Sent!");
+            alert(type + " Recorded!");
+            location.reload();
         }
     </script>
 </body>
