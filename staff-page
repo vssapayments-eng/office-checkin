@@ -1,0 +1,30 @@
+window.onload = () => {
+    const params = new URLSearchParams(window.location.search);
+    const received = params.get('auth');
+    const now = new Date();
+    const mins = now.getHours() * 60 + now.getMinutes();
+
+    // Verify QR Code Security (30-second token)
+    const timeBlock = Math.floor(Date.now() / 30000);
+    const token = btoa(timeBlock).substring(0,8);
+
+    if (received === token) {
+        document.getElementById('app').style.display = 'block';
+        
+        // --- YOUR TIME RULES ---
+        const tenFifteen = 10 * 60 + 15; // 10:15 AM
+        const onePM = 13 * 60;          // 1:00 PM
+        
+        const loginBtn = document.getElementById('loginBtn');
+        
+        // Allow LOGIN: Before 10:15 AM OR After 1:00 PM
+        if (mins <= tenFifteen || mins >= onePM) {
+            loginBtn.style.display = "block";
+        } else {
+            loginBtn.style.display = "none";
+            document.getElementById('msg').innerText = "Login Closed (10:15 AM - 1:00 PM)";
+        }
+    } else {
+        document.body.innerHTML = "<h2>Invalid QR. Scan again on Boss's phone.</h2>";
+    }
+};
