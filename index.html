@@ -1,74 +1,69 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Staff Attendance</title>
+    <title>Office Attendance</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; }
-        #app { display: none; } /* Hidden until QR is verified */
-        video { width: 100%; max-width: 400px; border-radius: 10px; border: 2px solid #333; }
-        .btn { padding: 15px; margin: 10px; width: 80%; color: white; border: none; border-radius: 5px; font-size: 18px; }
-        .login { background: #27ae60; } .logout { background: #c0392b; }
+        body { font-family: sans-serif; text-align: center; padding: 40px 20px; background: #f4f7f6; }
+        #app { display: none; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        input { padding: 15px; width: 80%; margin: 20px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
+        .btn { padding: 20px; width: 90%; color: white; border: none; border-radius: 10px; font-size: 20px; margin: 10px 0; cursor: pointer; font-weight: bold; }
+        .login { background: #27ae60; } .logout { background: #e67e22; }
+        #msg { color: #c0392b; font-weight: bold; margin-top: 15px; }
     </style>
 </head>
 <body>
     <div id="app">
-        <h2>Office Attendance</h2>
-        <video id="video" autoplay playsinline></video>
-        <canvas id="canvas" width="400" height="300" style="display:none;"></canvas>
-        <br>
-        <input type="text" id="empName" placeholder="Enter Full Name" style="padding:15px; width:75%; margin:10px;">
-        <button id="loginBtn" class="btn login" onclick="send('LOGIN')">LOGIN</button>
-        <button id="logoutBtn" class="btn logout" onclick="send('LOGOUT')">LOGOUT</button>
-        <p id="msg" style="color:red; font-weight:bold;"></p>
+        <h2>Welcome to Office</h2>
+        <input type="text" id="name" placeholder="Enter Your Full Name">
+        <button id="loginBtn" class="btn login" onclick="send('LOGIN')">CLOCK IN</button>
+        <button id="logoutBtn" class="btn logout" onclick="send('LOGOUT')">CLOCK OUT</button>
+        <p id="msg"></p>
     </div>
 
     <script>
-        const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbzonysdJa_ftR1aVFNj-enEGZDXjH_jgAltb_p_AYymk_FVUVNvAJGl6gavj_6g5PuFXw/exec"; 
+        const GOOGLE_URL = "YOUR_APPS_SCRIPT_URL_HERE"; // Ensure this is your latest /exec URL
 
         window.onload = () => {
             const params = new URLSearchParams(window.location.search);
             const received = params.get('auth');
-            
-            // Security verification
-            const now = Math.floor(Date.now() / 30000);
-            const token = btoa(now).substring(0,8);
-            const prevToken = btoa(now - 1).substring(0,8); // Allow 30s grace period
+            const token = btoa(Math.floor(Date.now() / 30000)).substring(0,8);
 
-            if (received === token || received === prevToken) {
+            if (received === token) {
                 document.getElementById('app').style.display = 'block';
-                startCamera();
                 checkTime();
             } else {
-                document.body.innerHTML = "<h2 style='color:red; margin-top:50px;'>❌ Invalid or Expired QR.<br>Please scan the live code on the Boss's phone.</h2>";
+                document.body.innerHTML = "<h2 style='color:red;'>❌ Expired Session.<br>Please scan the live QR on the Boss's phone again.</h2>";
             }
         };
 
         function checkTime() {
             const now = new Date();
             const mins = now.getHours() * 60 + now.getMinutes();
-            // Hide Login between 10:15 AM and 1:00 PM
-            if (mins > 615 && mins < 780) {
+            if (mins > 615 && mins < 780) { // 10:15 AM to 1:00 PM
                 document.getElementById('loginBtn').style.display = 'none';
-                document.getElementById('msg').innerText = "Login Closed (Re-opens at 1:00 PM)";
+                document.getElementById('msg').innerText = "Login is currently closed.";
             }
         }
 
-        async function startCamera() {
-            const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-            document.getElementById('video').srcObject = s;
-        }
-
         async function send(type) {
-            const n = document.getElementById('empName').value;
-            if(!n) return alert("Please enter your name");
-            const c = document.getElementById('canvas');
-            c.getContext('2d').drawImage(document.getElementById('video'), 0, 0, 400, 300);
-            const p = c.toDataURL('image/jpeg', 0.5);
-            
-            await fetch(GOOGLE_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({name:n, type:type, photo:p}) });
-            alert(type + " Recorded!");
-            location.reload();
+            const name = document.getElementById('name').value;
+            if(!name) return alert("Please enter your name");
+
+            // Simplified data: No photo
+            const payload = { name: name, type: type };
+
+            try {
+                await fetch(GOOGLE_URL, { 
+                    method: 'POST', 
+                    mode: 'no-cors', 
+                    body: JSON.stringify(payload) 
+                });
+                alert(type + " Successful for " + name);
+                window.location.href = "about:blank"; // Close/Clear page
+            } catch (e) {
+                alert("Error: " + e);
+            }
         }
     </script>
 </body>
