@@ -124,16 +124,14 @@
             statusMsg.style.color = "#2563eb";
 
             try {
-                // The Fetch Engine
-                await fetch(GOOGLE_URL, {
+                // Simplified fetch to bypass strict browser checks
+                await fetch(GOOGLE_URL + "?name=" + encodeURIComponent(nameValue) + "&type=" + type, {
                     method: 'POST',
-                    mode: 'no-cors', // Essential for Google Apps Script cross-origin
-                    cache: 'no-cache',
-                    body: JSON.stringify({
-                        name: nameValue,
-                        type: type
-                    })
+                    mode: 'no-cors'
                 });
+
+                showSuccess(nameValue, type);
+            }
 
                 // Since 'no-cors' provides an empty response, we assume success if no catch error
                 showSuccess(nameValue, type);
