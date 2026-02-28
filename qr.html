@@ -4,31 +4,42 @@
     <title>Office QR Beacon</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        body { text-align: center; font-family: sans-serif; padding-top: 50px; }
-        #qrcode { display: inline-block; padding: 20px; border: 5px solid #333; border-radius: 10px; min-height: 300px; min-width: 300px; background: #f9f9f9; }
+        body { text-align: center; font-family: sans-serif; padding-top: 50px; background: #f4f4f9; }
+        #qrcode { 
+            display: inline-block; 
+            padding: 20px; 
+            border: 5px solid #333; 
+            border-radius: 15px; 
+            background: white;
+            min-height: 300px; 
+            min-width: 300px;
+        }
     </style>
 </head>
 <body>
     <h2>SCAN TO CLOCK IN</h2>
     <div id="qrcode"></div>
-    <p id="stat">Generating code...</p>
+    <p id="timer">Refreshing in: 30s</p>
 
     <script>
-        // Use your live GitHub Pages link here
+        // Use your live GitHub link here
         const attendanceUrl = "https://vssapayments-eng.github.io/office-checkin/index.html"; 
         const qrDiv = document.getElementById("qrcode");
         const qrcode = new QRCode(qrDiv, { width: 300, height: 300 });
 
-        function update() {
-            // Generate token based on 30-second window
-            const token = btoa(Math.floor(Date.now() / 30000)).substring(0,8);
+        function updateQR() {
+            // Create a token based on a 30-second time block
+            const timeBlock = Math.floor(Date.now() / 30000);
+            const token = btoa(timeBlock).substring(0,8);
+            
+            // Generate the link with the security token
             qrcode.makeCode(attendanceUrl + "?auth=" + token);
-            document.getElementById("stat").innerText = "Code updated at: " + new Date().toLocaleTimeString();
+            console.log("QR Updated");
         }
 
-        // Update every second to ensure it's always fresh
-        setInterval(update, 1000);
-        update();
+        // Update the QR every 30 seconds
+        setInterval(updateQR, 30000);
+        updateQR();
     </script>
 </body>
 </html>
