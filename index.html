@@ -5,16 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body { font-family: sans-serif; text-align: center; padding: 40px 20px; background: #f4f7f6; }
-        #app { display: none; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        input { padding: 15px; width: 80%; margin: 20px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
-        .btn { padding: 20px; width: 90%; color: white; border: none; border-radius: 10px; font-size: 20px; margin: 10px 0; cursor: pointer; font-weight: bold; }
+        #app { display: none; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        input { padding: 15px; width: 85%; margin: 20px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
+        .btn { padding: 20px; width: 100%; color: white; border: none; border-radius: 10px; font-size: 18px; margin: 10px 0; cursor: pointer; font-weight: bold; }
         .login { background: #27ae60; } .logout { background: #e67e22; }
         #msg { color: #c0392b; font-weight: bold; margin-top: 15px; }
     </style>
 </head>
 <body>
     <div id="app">
-        <h2>Welcome to Office</h2>
+        <h2>Attendance Portal</h2>
         <input type="text" id="name" placeholder="Enter Your Full Name">
         <button id="loginBtn" class="btn login" onclick="send('LOGIN')">CLOCK IN</button>
         <button id="logoutBtn" class="btn logout" onclick="send('LOGOUT')">CLOCK OUT</button>
@@ -22,60 +22,46 @@
     </div>
 
     <script>
-        const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbw2__GA2alLL-T01ZeQ5UBjfhVV4jHsR9Tv3t59_7L6MqrU1v1cplFocZ8ODUeIhsvvfA/exec"; // Ensure this is your latest /exec URL
+        const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbxD7XvvxqDVYsOG115VNCldV064DwXn4M_miwRSzS-fLnLry9me6yDk2K0_ymIo81WRCA/exec";
 
-    // 2. Paste the window.onload fix here
-    window.onload = () => {
-        const params = new URLSearchParams(window.location.search);
-        const received = params.get('auth');
-        
-        // This is the 30-second security math
-        const now = Math.floor(Date.now() / 30000);
-        const token1 = btoa(now).substring(0,8);
-        const token2 = btoa(now - 1).substring(0,8);
+        window.onload = () => {
+            const params = new URLSearchParams(window.location.search);
+            const received = params.get('auth');
+            const now = Math.floor(Date.now() / 30000);
+            const token1 = btoa(now).substring(0,8);
+            const token2 = btoa(now - 1).substring(0,8);
 
-        if (received === token1 || received === token2) {
-            document.getElementById('app').style.display = 'block';
+            if (received === token1 || received === token2) {
+                document.getElementById('app').style.display = 'block';
+                document.getElementById('name').value = localStorage.getItem('staffName') || '';
+            } else {
+                document.body.innerHTML = "<h2 style='color:red;'>❌ Expired Session.<br>Please scan the live QR again.</h2>";
+            }
+        };
+
+        async function send(type) {
+            const name = document.getElementById('name').value;
+            if(!name) return alert("Please enter your name");
+            localStorage.setItem('staffName', name);
+
+            document.getElementById('msg').innerText = "Processing... Please wait.";
             
-            // Fill in the name if they used it before
-            document.getElementById('name').value = localStorage.getItem('staffName') || '';
-            
-            checkTime();
-        } else {
-            document.body.innerHTML = "<h2 style='color:red; text-align:center; margin-top:50px;'>❌ Link Expired.<br>Please scan the fresh QR code on the Boss's phone.</h2>";
+            try {
+                const response = await fetch(GOOGLE_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ name: name, type: type }) 
+                });
+                const result = await response.text();
+
+                if (result === "ALREADY_EXISTS") {
+                    document.getElementById('msg').innerText = "❌ You have already logged in today!";
+                } else {
+                    document.body.innerHTML = `<h2 style='color:green;'>✅ ${type} Successful!<br>Goodbye, ${name}.</h2>`;
+                }
+            } catch (e) {
+                alert("Connection Error. Try again.");
+            }
         }
-    };
-
-    // 3. Keep your checkTime function
-    function checkTime() {
-        const now = new Date();
-        const mins = now.getHours() * 60 + now.getMinutes();
-        if (mins > 615 && mins < 780) { 
-            document.getElementById('loginBtn').style.display = 'none';
-            document.getElementById('msg').innerText = "Login is currently closed.";
-        }
-    }
-
-    // 4. Paste the updated send function here
-    async function send(type) {
-        const name = document.getElementById('name').value;
-        if(!name) return alert("Please enter your name");
-
-        // Save name for next time
-        localStorage.setItem('staffName', name);
-
-        const payload = { name: name, type: type };
-
-        try {
-            document.getElementById('app').innerHTML = "<h2>Recording... Please wait.</h2>";
-            await fetch(GOOGLE_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-            
-            document.body.innerHTML = `<h2 style='color:green; text-align:center; margin-top:50px;'>✅ ${type} Successful!<br>Have a great day, ${name}.</h2>`;
-        } catch (e) {
-            alert("Error: " + e);
-        }
-    }
-</script>
+    </script>
 </body>
 </html>
-     
