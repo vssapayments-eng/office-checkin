@@ -19,14 +19,14 @@
     <div id="timer">Refreshing in 30s...</div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxXdzjhlliJT8dsvwM5meI4fdA4uFW2SW_b13AkSz3hwg2TgADABOvxd_9oHzHHeepU5Q/exec"; 
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzcZ6w631hYMpAvOoxgo-vR7XAY8FG78isb5xrgRrI2248HLXMEmIeeJG45NUTaZrVYKw/exec"; 
         const SECRET = "RSCO_SECURE_2026";
 
         function generateQR() {
             const ts = Math.floor(Date.now() / 1000);
             const token = btoa(SECRET + "|" + ts);
             document.getElementById("qrcode").innerHTML = "";
-            new QRCode(document.getElementById("qrcode"), { text: SCRIPT_URL + "?token=" + token, width: 250, height: 250 });
+            new QRCode(document.getElementById("qrcode"), { text: SCRIPT_URL + "?token=" + token, width: 550, height: 550 });
         }
         setInterval(generateQR, 30000); 
         generateQR();
