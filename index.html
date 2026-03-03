@@ -2,23 +2,43 @@
 <html>
 <head>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </head>
-<body style="text-align:center; font-family: sans-serif; padding-top: 50px;">
-    <h2>Office Entrance QR</h2>
-    <canvas id="qr"></canvas>
-    <p id="timer">Refreshing in 30s...</p>
-    <script>
-        const SECRET = "12345"; // MUST MATCH APPS SCRIPT
-        const BASE_URL = "https://script.google.com/macros/s/AKfycbykUf5qn3YcIk_jbYcOhMwNSjk3VIap1dFLI-zEM5hmk7KTSbTgq3DWvHmRwZN4CzjLbw/exec";
+<body style="text-align:center; font-family: sans-serif; background: #222; color: white; padding-top: 50px;">
+    <h2>Office Attendance - Scan QR</h2>
+    <div style="background: white; display: inline-block; padding: 20px; border-radius: 10px;">
+        <canvas id="qr"></canvas>
+    </div>
+    <h3 id="timer">New QR in 30s</h3>
 
-        function generate() {
+    <script>
+        const SECRET = "123"; 
+        const BASE_URL = "https://script.google.com/macros/s/AKfycbxYjcRr4ro-moLqsa9qA3P5q-NjcWqNSttkxdtV1TIzv_uX1R1FNTQdfKjk8Sa9GE8ehg/exec";
+
+        function generateQR() {
             const timeBlock = Math.floor(Date.now() / 30000);
-            // Basic hash for QR (simplified for demo)
-            const token = btoa(timeBlock); 
-            new QRious({ element: document.getElementById('qr'), value: `${BASE_URL}?token=${token}`, size: 400 });
+            const hash = CryptoJS.HmacSHA256(timeBlock.toString(), SECRET);
+            const token = CryptoJS.enc.Base64.stringify(hash);
+            
+            new QRious({
+                element: document.getElementById('qr'),
+                value: `${BASE_URL}?token=${encodeURIComponent(token)}`,
+                size: 350
+            });
+            console.log("Token Generated: " + token);
         }
-        setInterval(generate, 30000);
-        generate();
+
+        let timeLeft = 30;
+        setInterval(() => {
+            timeLeft--;
+            if (timeLeft <= 0) {
+                generateQR();
+                timeLeft = 30;
+            }
+            document.getElementById('timer').innerText = `Refreshing in ${timeLeft}s`;
+        }, 1000);
+
+        generateQR();
     </script>
 </body>
 </html>
