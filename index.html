@@ -1,56 +1,40 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>RSCO QR Terminal</title>
+    <title>RSCO</title>
+    <meta name="apple-mobile-web-app-title" content="RSCO">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="https://ui-avatars.com/api/?name=RS&background=007bff&color=fff&size=512&font-size=0.4&bold=true">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #2c3e50; color: white; }
-        #qrcode { background: white; padding: 20px; border-radius: 10px; margin: 20px; }
-        h1 { margin-bottom: 5px; }
-        #timer { font-size: 1.2em; color: #bdc3c7; }
+        #qrcode { padding: 25px; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .logo { font-size: 28px; font-weight: bold; margin-bottom: 20px; letter-spacing: 5px; color: #ecf0f1; }
+        #timer { margin-top: 20px; font-size: 14px; opacity: 0.6; }
     </style>
 </head>
 <body>
-    <h1>RSCO Attendance</h1>
-    <div id="timer">Refreshing in: <span id="seconds">30</span>s</div>
+    <div class="logo">RSCO TERMINAL</div>
     <div id="qrcode"></div>
-    <p>Scan to Punch Attendance</p>
+    <div id="timer">New QR in 30s...</div>
 
     <script>
-        // --- CONFIGURATION ---
-        const SCRIPT_ID = "https://script.google.com/macros/s/AKfycbxk31g4QVkykVk57EeK2fKBmlrYM50bQRBzPiXw7qQXulDGU3dzZCSnzAnxRMzrYpJHwQ/exec"; // <--- PASTE YOUR GOOGLE SCRIPT ID HERE
+        // REPLACE THIS WITH YOUR NEW WEB APP URL
+        const SCRIPT_URL = "https://script.google.com/macros/s/XXXXX/exec"; 
         const SECRET = "RSCO_SECURE_2026";
-        
-        const qrcode = new QRCode(document.getElementById("qrcode"), {
-            width: 300,
-            height: 300,
-            correctLevel: QRCode.CorrectLevel.H
-        });
 
-        let timeLeft = 30;
-
-        function updateQR() {
+        function generateQR() {
             const ts = Math.floor(Date.now() / 1000);
-            // Create the secure token: Secret + Timestamp
             const token = btoa(SECRET + "|" + ts);
-            
-            // Construct the full URL for the employee to scan
-            const finalUrl = `https://script.google.com/macros/s/${SCRIPT_ID}/exec?token=${token}`;
-            
-            qrcode.clear();
-            qrcode.makeCode(finalUrl);
-            timeLeft = 30;
+            document.getElementById("qrcode").innerHTML = "";
+            new QRCode(document.getElementById("qrcode"), { 
+                text: SCRIPT_URL + "?token=" + token, 
+                width: 280, 
+                height: 280 
+            });
         }
-
-        // Update the countdown timer on screen
-        setInterval(() => {
-            timeLeft--;
-            document.getElementById("seconds").innerText = timeLeft;
-            if (timeLeft <= 0) updateQR();
-        }, 1000);
-
-        // Initial generation
-        updateQR();
+        setInterval(generateQR, 30000); 
+        generateQR();
     </script>
 </body>
 </html>
