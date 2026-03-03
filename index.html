@@ -1,22 +1,115 @@
-<script>
-    // PASTE YOUR NEW DEPLOYMENT URL HERE
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxgtQTfc5TGaWWVC4qAaeearytVKxAchiLD7d9SeIQPcaYu_mokPYDJHXJN5UZmkLc2/exec"; 
-    const SECRET = "RSCO_SECURE_2026";
-
-    function generateQR() {
-        const ts = Math.floor(Date.now() / 1000);
-        // We use the same SECRET|TS format your script expects
-        const token = btoa(SECRET + "|" + ts);
-        
-        document.getElementById("qrcode").innerHTML = "";
-        new QRCode(document.getElementById("qrcode"), { 
-            text: SCRIPT_URL + "?token=" + encodeURIComponent(token), 
-            width: 480, 
-            height: 480 
-        });
-    }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RSCO Terminal</title>
+    <meta name="apple-mobile-web-app-title" content="RSCO">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="https://ui-avatars.com/api/?name=RS&background=007bff&color=fff&size=512&font-size=0.4&bold=true">
     
-    // Refresh every 30 seconds
-    setInterval(generateQR, 30000); 
-    generateQR();
-</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            margin: 0; 
+            background: #2c3e50; 
+            color: white; 
+        }
+        #qrcode { 
+            padding: 25px; 
+            background: white; 
+            border-radius: 15px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+        }
+        .logo { 
+            font-size: 28px; 
+            font-weight: bold; 
+            margin-bottom: 20px; 
+            letter-spacing: 5px; 
+            color: #ecf0f1; 
+            text-transform: uppercase;
+        }
+        #timer { 
+            margin-top: 25px; 
+            font-size: 16px; 
+            font-weight: 300;
+            background: rgba(0,0,0,0.2);
+            padding: 8px 20px;
+            border-radius: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="logo">RSCO TERMINAL</div>
+    
+    <div id="qrcode"></div>
+    
+    <div id="timer">Refreshing QR in <span id="seconds">30</span>s...</div>
+
+    <script>
+        /** * 1. PASTE YOUR NEW WEB APP URL HERE
+         * Make sure it ends in /exec
+         */
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxgtQTfc5TGaWWVC4qAaeearytVKxAchiLD7d9SeIQPcaYu_mokPYDJHXJN5UZmkLc2/exec"; 
+        
+        /**
+         * 2. MUST MATCH THE SECRET IN YOUR CODE.GS
+         */
+        const SECRET = "RSCO_SECURE_2026";
+
+        let timeLeft = 30;
+
+        function generateQR() {
+            // Get current Unix Timestamp (Seconds)
+            const ts = Math.floor(Date.now() / 1000);
+            
+            // Create the token string exactly as the server expects
+            // format: SECRET|TIMESTAMP
+            const rawToken = SECRET + "|" + ts;
+            const token = btoa(rawToken);
+            
+            // Construct final URL with encoded token
+            const finalUrl = SCRIPT_URL + "?token=" + encodeURIComponent(token);
+            
+            // Clear previous QR and generate new one
+            const qrContainer = document.getElementById("qrcode");
+            qrContainer.innerHTML = ""; 
+            
+            try {
+                new QRCode(qrContainer, { 
+                    text: finalUrl, 
+                    width: 280, 
+                    height: 280,
+                    colorDark : "#000000",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H
+                });
+                console.log("Generated for: " + finalUrl);
+            } catch (err) {
+                console.error("QR Generation failed:", err);
+            }
+        }
+
+        // Timer Logic
+        setInterval(() => {
+            timeLeft--;
+            if (timeLeft <= 0) {
+                generateQR();
+                timeLeft = 30;
+            }
+            document.getElementById("seconds").innerText = timeLeft;
+        }, 1000);
+
+        // Initial generation on page load
+        window.onload = generateQR;
+    </script>
+</body>
+</html>
