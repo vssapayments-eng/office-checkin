@@ -3,49 +3,49 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://unpkg.com/html5-qrcode"></script>
-    <style>
-        body { font-family:sans-serif; text-align:center; padding:20px; background:#f4f4f4; }
-        #reader { width:100%; max-width:400px; margin:auto; border-radius:10px; overflow:hidden; }
-    </style>
 </head>
-<body>
-    <div id="reg" style="display:none;">
-        <h3>Device Registration</h3>
-        <input type="text" id="eid" placeholder="Enter Employee ID"><br><br>
-        <button onclick="save()" style="padding:10px 20px;">Register This Phone</button>
+<body style="text-align:center; font-family:sans-serif;">
+    <div id="setup" style="display:none; padding:20px;">
+        <h3>First Time Setup</h3>
+        <input type="text" id="myId" placeholder="Enter Employee ID">
+        <button onclick="saveId()">Save ID</button>
     </div>
-    <div id="scan-zone">
-        <p>Logged in as: <strong id="user"></strong></p>
-        <div id="reader"></div>
-        <p id="msg">Ready to scan office QR...</p>
+
+    <div id="main">
+        <p>Logged in as: <b id="showId"></b></p>
+        <div id="reader" style="width:300px; margin:auto;"></div>
+        <p id="msg">Scan the office QR code</p>
     </div>
 
     <script>
-        const eid = localStorage.getItem('eid');
-        const did = localStorage.getItem('did') || 'D-' + Math.random().toString(36).substr(2,9);
-        localStorage.setItem('did', did);
+        const savedId = localStorage.getItem('empId');
+        // Unique ID for this specific phone
+        const devId = localStorage.getItem('devId') || "PH-" + Math.floor(Math.random()*1000000);
+        localStorage.setItem('devId', devId);
 
-        if(!eid) {
-            document.getElementById('reg').style.display='block';
-            document.getElementById('scan-zone').style.display='none';
+        if (!savedId) {
+            document.getElementById('setup').style.display = 'block';
+            document.getElementById('main').style.display = 'none';
         } else {
-            document.getElementById('user').innerText = eid;
+            document.getElementById('showId').innerText = savedId;
             const scanner = new Html5Qrcode("reader");
             scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (decodedText) => {
-                document.getElementById('msg').innerText = "Verifying...";
-                // Append ID and DID to the URL provided by the QR
-                const finalUrl = `${decodedText}&id=${encodeURIComponent(eid)}&did=${encodeURIComponent(did)}`;
+                document.getElementById('msg').innerText = "Processing...";
                 
-                fetch(finalUrl).then(r => r.text()).then(txt => {
-                    alert(txt);
-                    location.reload(); 
-                }).catch(e => alert("Connection Error. Check Internet."));
+                // decodedText is ".../exec?token=12345"
+                // We just add "&id=EMP&did=PHONE" to the end
+                const finalUrl = decodedText + "&id=" + savedId + "&did=" + devId;
+
+                fetch(finalUrl)
+                    .then(r => r.text())
+                    .then(t => { alert(t); location.reload(); })
+                    .catch(e => alert("Network Error. Check internet."));
             });
         }
 
-        function save() {
-            const val = document.getElementById('eid').value.trim();
-            if(val) { localStorage.setItem('eid', val); location.reload(); }
+        function saveId() {
+            const val = document.getElementById('myId').value.trim();
+            if (val) { localStorage.setItem('empId', val); location.reload(); }
         }
     </script>
 </body>
