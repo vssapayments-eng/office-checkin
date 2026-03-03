@@ -1,135 +1,57 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Staff Attendance Scanner</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background-color: #f4f7f6; color: #333; padding: 20px; }
-        .container { max-width: 400px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        #reader { width: 100%; border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
-        #status { margin-top: 20px; font-weight: bold; padding: 10px; border-radius: 5px; }
-        .success { color: #155724; background-color: #d4edda; }
-        .error { color: #721c24; background-color: #f8d7da; }
-        input { padding: 12px; width: 80%; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; }
-        button { padding: 12px 25px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
-        .info { font-size: 0.9em; color: #666; margin-top: 10px; }
+        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f4f4; }
+        #reader { width: 100%; max-width: 400px; margin: auto; border-radius: 10px; }
+        #status { margin-top: 20px; font-weight: bold; }
     </style>
 </head>
 <body>
-
-<div class="container">
-    <h2>Office Attendance</h2>
-    
-    <div id="setup-ui" style="display:none;">
-        <p>Please enter your Employee ID to register this device.</p>
-        <input type="text" id="empIdInput" placeholder="Enter ID (e.g., EMP001)">
-        <br>
-        <button onclick="saveProfile()">Register Device</button>
+    <div id="setup" style="display:none;">
+        <h3>Enter Employee ID</h3>
+        <input type="text" id="eid" style="padding:10px;"><button onclick="save()" style="padding:10px;">Save</button>
     </div>
-
-    <div id="scanner-ui" style="display:none;">
-        <p>Employee: <strong id="displayId"></strong></p>
+    <div id="app">
+        <p>ID: <strong id="disp"></strong></p>
         <div id="reader"></div>
-        <div id="status">Ready to scan office QR...</div>
-        <p class="info">Point your camera at the office monitor.</p>
-        <button onclick="resetId()" style="background-color: #6c757d; font-size: 12px; margin-top: 20px;">Change Employee ID</button>
+        <p id="status">Ready to scan...</p>
     </div>
-</div>
 
-<script>
-    // --- CONFIGURATION ---
-    // Note: No URL is needed here because the URL comes FROM the QR code itself.
-    
-    let empId = localStorage.getItem('eid');
-    let deviceId = localStorage.getItem('did');
+    <script>
+        let eid = localStorage.getItem('eid');
+        let did = localStorage.getItem('did') || 'D-' + Math.random().toString(36).substr(2,9);
+        localStorage.setItem('did', did);
 
-    // Generate a persistent unique Device ID if it doesn't exist
-    if (!deviceId) {
-        deviceId = 'DEV-' + Math.random().toString(36).substr(2, 9) + Date.now();
-        localStorage.setItem('did', deviceId);
-    }
-
-    // Logic to show Setup or Scanner
-    if (!empId) {
-        document.getElementById('setup-ui').style.display = 'block';
-    } else {
-        showScanner();
-    }
-
-    function saveProfile() {
-        const input = document.getElementById('empIdInput').value.trim();
-        if (input) {
-            localStorage.setItem('eid', input);
-            location.reload();
+        if(!eid) {
+            document.getElementById('setup').style.display='block';
+            document.getElementById('app').style.display='none';
         } else {
-            alert("Please enter a valid ID.");
+            document.getElementById('disp').innerText = eid;
+            startScanner();
         }
-    }
 
-    function resetId() {
-        if(confirm("Change Employee ID? This may require Admin to reset your device link in the sheet.")) {
-            localStorage.removeItem('eid');
+        function save() {
+            localStorage.setItem('eid', document.getElementById('eid').value);
             location.reload();
         }
-    }
 
-    function showScanner() {
-        document.getElementById('scanner-ui').style.display = 'block';
-        document.getElementById('displayId').innerText = empId;
-
-        const html5QrCode = new Html5Qrcode("reader");
-        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-
-        html5QrCode.start(
-            { facingMode: "environment" }, 
-            config,
-            (decodedText) => {
-                // 'decodedText' is the URL from your office monitor QR code
-                processAttendance(decodedText);
-            }
-        ).catch(err => {
-            document.getElementById('status').innerText = "Camera Error: " + err;
-            document.getElementById('status').className = "error";
-        });
-    }
-
-    function processAttendance(qrUrl) {
-        const statusDiv = document.getElementById('status');
-        statusDiv.innerText = "Verifying...";
-        statusDiv.className = "";
-
-        // Build the final URL with ID and Device ID
-        // The QR URL already contains the script URL and the token
-        const finalUrl = `${qrUrl}&id=${empId}&did=${deviceId}`;
-
-        fetch(finalUrl)
-            .then(response => {
-                // If Google Apps Script redirects, fetch the new URL
-                if (response.redirected) {
-                    return fetch(response.url);
-                }
-                return response;
-            })
-            .then(res => res.text())
-            .then(data => {
-                if (data.includes("SUCCESS")) {
-                    statusDiv.className = "success";
-                    statusDiv.innerText = data;
-                    // Optional: Vibrate phone on success
-                    if (navigator.vibrate) navigator.vibrate(200);
-                } else {
-                    statusDiv.className = "error";
-                    statusDiv.innerText = data;
-                }
-            })
-            .catch(error => {
-                statusDiv.className = "error";
-                statusDiv.innerText = "Connection Failed. Ensure Web App is deployed to 'Anyone'.";
-                console.error('Error:', error);
+        function startScanner() {
+            const scanner = new Html5Qrcode("reader");
+            scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (url) => {
+                document.getElementById('status').innerText = "Verifying...";
+                // Fix for Google Redirect
+                fetch(`${url}&id=${eid}&did=${did}`, { redirect: 'follow' })
+                    .then(r => r.text())
+                    .then(txt => {
+                        alert(txt);
+                        document.getElementById('status').innerText = txt;
+                    })
+                    .catch(e => alert("Network Error: Check Internet or Permissions"));
             });
-    }
-</script>
+        }
+    </script>
 </body>
 </html>
