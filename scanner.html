@@ -39,19 +39,33 @@
         }
 
         function startScanner() {
-            const scanner = new Html5Qrcode("reader");
-            scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (url) => {
-                document.getElementById('status').innerText = "Verifying...";
-                // Fix for Google Redirect
-                fetch(`${url}&id=${eid}&did=${did}`, { redirect: 'follow' })
-                    .then(r => r.text())
-                    .then(txt => {
-                        alert(txt);
-                        document.getElementById('status').innerText = txt;
-                    })
-                    .catch(e => alert("Network Error: Check Internet or Permissions"));
+    const scanner = new Html5Qrcode("reader");
+    scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (qrUrl) => {
+        // Stop scanning once a code is found to prevent multiple rapid requests
+        scanner.stop(); 
+        
+        document.getElementById('status').innerText = "Verifying...";
+        
+        // Ensure qrUrl from the monitor already contains the ?token=XYZ part
+        // We append the Employee ID and Device ID using &
+        const finalUrl = `${qrUrl}&id=${encodeURIComponent(eid)}&did=${encodeURIComponent(did)}`;
+
+        console.log("Requesting: " + finalUrl); // For debugging in mobile console
+
+        fetch(finalUrl)
+            .then(r => r.text())
+            .then(txt => {
+                alert(txt);
+                document.getElementById('status').innerText = txt;
+                // Restart scanner after 3 seconds so they can scan again if needed
+                setTimeout(() => { location.reload(); }, 3000); 
+            })
+            .catch(e => {
+                alert("Network Error: Ensure your Apps Script is deployed to 'Anyone'");
+                location.reload();
             });
-        }
+    });
+}
     </script>
 </body>
 </html>
