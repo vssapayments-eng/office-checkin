@@ -1,31 +1,22 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
-</head>
-<body style="text-align:center; font-family:sans-serif; background:#f0f0f0; padding-top:50px;">
-    <h2>Office Attendance</h2>
-    <canvas id="qr"></canvas>
-    <p>QR refreshes every 30 seconds</p>
+<script>
+    // PASTE YOUR NEW DEPLOYMENT URL HERE
+    const SCRIPT_URL = "https://script.google.com/macros/s/XXXXX/exec"; 
+    const SECRET = "RSCO_SECURE_2026";
 
-    <script>
-        // PASTE YOUR NEW /exec URL HERE
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyVO2OOuZG_E68wor84MHH4fT5bVZPhmgTsNldN-82qQNvY6dyGQ4RhziICWFKd_ZFTVw/exec"; 
-
-        function updateQR() {
-            const now = Date.now();
-            // We create a simple link: SCRIPT_URL?token=TIMESTAMP
-            const qrLink = SCRIPT_URL + "?token=" + now;
-            
-            new QRious({
-                element: document.getElementById('qr'),
-                value: qrLink,
-                size: 300
-            });
-        }
-
-        setInterval(updateQR, 30000);
-        updateQR();
-    </script>
-</body>
-</html>
+    function generateQR() {
+        const ts = Math.floor(Date.now() / 1000);
+        // We use the same SECRET|TS format your script expects
+        const token = btoa(SECRET + "|" + ts);
+        
+        document.getElementById("qrcode").innerHTML = "";
+        new QRCode(document.getElementById("qrcode"), { 
+            text: SCRIPT_URL + "?token=" + encodeURIComponent(token), 
+            width: 280, 
+            height: 280 
+        });
+    }
+    
+    // Refresh every 30 seconds
+    setInterval(generateQR, 30000); 
+    generateQR();
+</script>
