@@ -1,49 +1,51 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>RS & Co. Attendance</title>
+    <title>RS & Co. - Admin Panel</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; }
-        #reader { width: 100%; max-width: 500px; margin: auto; }
-        .btn { padding: 15px; margin: 10px; width: 80%; font-size: 16px; border-radius: 8px; }
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f4f7f6; }
+        .card { background: white; padding: 20px; border-radius: 12px; shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        input, select, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 6px; border: 1px solid #ddd; }
+        button { background: #2c3e50; color: white; font-weight: bold; cursor: pointer; }
+        .audit-note { font-size: 0.8em; color: #666; }
     </style>
 </head>
 <body>
-    <h2>RS & Co. Punch Station</h2>
-    <div id="reader"></div>
-    <select id="punchType" class="btn">
-        <option value="Morning Login">Morning Login (9:30-10:30)</option>
-        <option value="Morning Logout">Morning Logout (1:30-3:30)</option>
-        <option value="Afternoon Login">Afternoon Login (3:00-3:30)</option>
-        <option value="Afternoon Logout">Evening Logout (6:30+)</option>
-    </select>
-    <input type="text" id="empName" placeholder="Enter Name" class="btn">
-    
-    <script>
-        // Unique Device ID Generation/Retrieval
-        let deviceId = localStorage.getItem('rs_device_id');
-        if (!deviceId) {
-            deviceId = 'DEV-' + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('rs_device_id', deviceId);
-        }
+    <div class="card">
+        <h2>Admin Punch (Field/Audit)</h2>
+        <p class="audit-note">Use this for Bank or Company Audits only.</p>
+        <input type="text" id="adminPass" placeholder="Enter Admin Password">
+        <hr>
+        <input type="text" id="targetEmp" placeholder="Employee Name">
+        <select id="punchType">
+            <option value="Morning Login">Morning Login</option>
+            <option value="Morning Logout">Morning Logout</option>
+            <option value="Afternoon Login">Afternoon Login</option>
+            <option value="Afternoon Logout">Afternoon Logout</option>
+        </select>
+        <button onclick="submitAdminPunch()">Submit Official Punch</button>
+    </div>
 
-        function onScanSuccess(decodedText, decodedResult) {
-            // Validate if QR is current (Check 30-sec hash here if needed)
+    <script>
+        function submitAdminPunch() {
+            const pass = document.getElementById('adminPass').value;
+            if(pass !== "RSCO_2024") { // Change this to your preferred password
+                alert("Incorrect Admin Password");
+                return;
+            }
+
             fetch('YOUR_GOOGLE_WEB_APP_URL', {
                 method: 'POST',
+                mode: 'no-cors',
                 body: JSON.stringify({
-                    employeeName: document.getElementById('empName').value,
-                    deviceId: deviceId,
+                    employeeName: document.getElementById('targetEmp').value,
                     type: document.getElementById('punchType').value,
-                    qrToken: decodedText
+                    isAdmin: true,
+                    deviceId: "ADMIN_DEVICE"
                 })
-            }).then(res => res.text()).then(msg => alert(msg));
+            }).then(() => alert("Punch recorded successfully for " + document.getElementById('targetEmp').value));
         }
-
-        let html5QrcodeScanner = new html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
-        html5QrcodeScanner.render(onScanSuccess);
     </script>
 </body>
 </html>
