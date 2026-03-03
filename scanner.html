@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body style="text-align:center; font-family: sans-serif;">
+    <div id="setup" style="display:none;">
+        <h3>Enter Employee ID</h3>
+        <input type="text" id="eid"><button onclick="save()">Save</button>
+    </div>
+    <div id="app">
+        <div id="reader" style="width:300px; margin:auto;"></div>
+        <p id="res"></p>
+    </div>
+    <script>
+        let eid = localStorage.getItem('eid');
+        let did = localStorage.getItem('did') || 'D-' + Math.random().toString(36).substr(2,9);
+        localStorage.setItem('did', did);
+
+        if(!eid) document.getElementById('setup').style.display='block';
+        
+        function save() { 
+            localStorage.setItem('eid', document.getElementById('eid').value); 
+            location.reload(); 
+        }
+
+        const scanner = new Html5Qrcode("reader");
+        scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
+            fetch(`${text}&id=${eid}&did=${did}`)
+                .then(r => r.text()).then(t => { alert(t); document.getElementById('res').innerText = t; });
+        });
+    </script>
+</body>
+</html>
