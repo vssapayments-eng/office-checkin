@@ -13,16 +13,16 @@
 
     <script>
         const SECRET = "123"; 
-        const BASE_URL = "https://script.google.com/macros/s/AKfycbxB6PavKhq-xLSlS8hA6AF2fw0jRqKL92pW_Hq2GDMCHWlz_JcJ0TfVOwBZ1CM9rm-Svw/exec?";
+        const BASE_URL = "https://script.google.com/macros/s/AKfycbxB6PavKhq-xLSlS8hA6AF2fw0jRqKL92pW_Hq2GDMCHWlz_JcJ0TfVOwBZ1CM9rm-Svw/exec";
 
         function generateQR() {
             const timeBlock = Math.floor(Date.now() / 30000);
             const hash = CryptoJS.HmacSHA256(timeBlock.toString(), SECRET);
             const token = CryptoJS.enc.Base64.stringify(hash);
-            
+            const qrValue = '${BASE_URL}?token=${encodeURIComponent(token)}';
             new QRious({
                 element: document.getElementById('qr'),
-                value: `${BASE_URL}?token=${encodeURIComponent(token)}`,
+                value: qrValue,
                 size: 350
             });
             console.log("Token Generated: " + token);
