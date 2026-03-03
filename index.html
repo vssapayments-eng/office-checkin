@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+</head>
+<body style="text-align:center; font-family: sans-serif; padding-top: 50px;">
+    <h2>Office Entrance QR</h2>
+    <canvas id="qr"></canvas>
+    <p id="timer">Refreshing in 30s...</p>
+    <script>
+        const SECRET = "YourSecretKey123"; // MUST MATCH APPS SCRIPT
+        const BASE_URL = "YOUR_APPS_SCRIPT_URL_HERE";
+
+        function generate() {
+            const timeBlock = Math.floor(Date.now() / 30000);
+            // Basic hash for QR (simplified for demo)
+            const token = btoa(timeBlock); 
+            new QRious({ element: document.getElementById('qr'), value: `${BASE_URL}?token=${token}`, size: 400 });
+        }
+        setInterval(generate, 30000);
+        generate();
+    </script>
+</body>
+</html>
