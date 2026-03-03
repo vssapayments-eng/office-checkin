@@ -1,51 +1,40 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>RS & Co. - Admin Panel</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RSCO</title>
+    <meta name="apple-mobile-web-app-title" content="RSCO">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="https://ui-avatars.com/api/?name=RS&background=007bff&color=fff&size=512&font-size=0.4&bold=true">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f4f7f6; }
-        .card { background: white; padding: 20px; border-radius: 12px; shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        input, select, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 6px; border: 1px solid #ddd; }
-        button { background: #2c3e50; color: white; font-weight: bold; cursor: pointer; }
-        .audit-note { font-size: 0.8em; color: #666; }
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #2c3e50; color: white; }
+        #qrcode { padding: 25px; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .logo { font-size: 28px; font-weight: bold; margin-bottom: 20px; letter-spacing: 5px; color: #ecf0f1; }
+        #timer { margin-top: 20px; font-size: 14px; opacity: 0.6; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2>Admin Punch (Field/Audit)</h2>
-        <p class="audit-note">Use this for Bank or Company Audits only.</p>
-        <input type="text" id="adminPass" placeholder="Enter Admin Password">
-        <hr>
-        <input type="text" id="targetEmp" placeholder="Employee Name">
-        <select id="punchType">
-            <option value="Morning Login">Morning Login</option>
-            <option value="Morning Logout">Morning Logout</option>
-            <option value="Afternoon Login">Afternoon Login</option>
-            <option value="Afternoon Logout">Afternoon Logout</option>
-        </select>
-        <button onclick="submitAdminPunch()">Submit Official Punch</button>
-    </div>
+    <div class="logo">RSCO TERMINAL</div>
+    <div id="qrcode"></div>
+    <div id="timer">New QR in 30s...</div>
 
     <script>
-        function submitAdminPunch() {
-            const pass = document.getElementById('adminPass').value;
-            if(pass !== "RSCO_2024") { // Change this to your preferred password
-                alert("Incorrect Admin Password");
-                return;
-            }
+        // REPLACE THIS WITH YOUR NEW WEB APP URL
+        const SCRIPT_URL = "https://script.google.com/macros/s/XXXXX/exec"; 
+        const SECRET = "RSCO_SECURE_2026";
 
-            fetch('YOUR_GOOGLE_WEB_APP_URL', {
-                method: 'POST',
-                mode: 'no-cors',
-                body: JSON.stringify({
-                    employeeName: document.getElementById('targetEmp').value,
-                    type: document.getElementById('punchType').value,
-                    isAdmin: true,
-                    deviceId: "ADMIN_DEVICE"
-                })
-            }).then(() => alert("Punch recorded successfully for " + document.getElementById('targetEmp').value));
+        function generateQR() {
+            const ts = Math.floor(Date.now() / 1000);
+            const token = btoa(SECRET + "|" + ts);
+            document.getElementById("qrcode").innerHTML = "";
+            new QRCode(document.getElementById("qrcode"), { 
+                text: SCRIPT_URL + "?token=" + token, 
+                width: 280, 
+                height: 280 
+            });
         }
+        setInterval(generateQR, 30000); 
+        generateQR();
     </script>
 </body>
 </html>
