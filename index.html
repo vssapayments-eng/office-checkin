@@ -2,43 +2,30 @@
 <html>
 <head>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </head>
-<body style="text-align:center; font-family: sans-serif; background: #222; color: white; padding-top: 50px;">
-    <h2>Office Attendance - Scan QR</h2>
-    <div style="background: white; display: inline-block; padding: 20px; border-radius: 10px;">
-        <canvas id="qr"></canvas>
-    </div>
-    <h3 id="timer">New QR in 30s</h3>
+<body style="text-align:center; font-family:sans-serif; background:#f0f0f0; padding-top:50px;">
+    <h2>Office Attendance</h2>
+    <canvas id="qr"></canvas>
+    <p>QR refreshes every 30 seconds</p>
 
     <script>
-        const SECRET = "123"; 
-        const BASE_URL = "https://script.google.com/macros/s/AKfycbxB6PavKhq-xLSlS8hA6AF2fw0jRqKL92pW_Hq2GDMCHWlz_JcJ0TfVOwBZ1CM9rm-Svw/exec";
+        // PASTE YOUR NEW /exec URL HERE
+        const SCRIPT_URL = "https://script.google.com/macros/s/YOUR_ID/exec"; 
 
-        function generateQR() {
-            const timeBlock = Math.floor(Date.now() / 30000);
-            const hash = CryptoJS.HmacSHA256(timeBlock.toString(), SECRET);
-            const token = CryptoJS.enc.Base64.stringify(hash);
-            const qrValue = '${BASE_URL}?token=${encodeURIComponent(token)}';
+        function updateQR() {
+            const now = Date.now();
+            // We create a simple link: SCRIPT_URL?token=TIMESTAMP
+            const qrLink = SCRIPT_URL + "?token=" + now;
+            
             new QRious({
                 element: document.getElementById('qr'),
-                value: qrValue,
-                size: 350
+                value: qrLink,
+                size: 300
             });
-            console.log("Token Generated: " + token);
         }
 
-        let timeLeft = 30;
-        setInterval(() => {
-            timeLeft--;
-            if (timeLeft <= 0) {
-                generateQR();
-                timeLeft = 30;
-            }
-            document.getElementById('timer').innerText = `Refreshing in ${timeLeft}s`;
-        }, 1000);
-
-        generateQR();
+        setInterval(updateQR, 30000);
+        updateQR();
     </script>
 </body>
 </html>
